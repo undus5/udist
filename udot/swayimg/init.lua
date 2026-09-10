@@ -18,18 +18,13 @@ swayimg.viewer.on_key("q", function()
 end)
 
 swayimg.viewer.on_key("i", function()
-   if swayimg.text.visible() then
-      swayimg.text.hide()
-   else
-      swayimg.text.show()
-   end
+   swayimg.text.visible = not swayimg.text.visible
 end)
 
 swayimg.viewer.on_key("h", function()
-   swayimg.viewer.switch_image("prev")
+   swayimg.viewer.open("prev")
 end)
 
 swayimg.viewer.on_key("l", function()
-   swayimg.viewer.switch_image("next")
+   swayimg.viewer.open("next")
 end)
-
