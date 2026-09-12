@@ -2,15 +2,15 @@
 
 set -e
 
-get_help() { echo "==> usage: $(basename $0) <build|pack> <root.fs>"; }
+get_help() { echo "==> usage: $(basename $0) <root.fs> <build|pack>"; }
 if [[ -z "$1" || "$1" == "-h" ]]; then get_help; exit 0; fi
 
 errf() { printf "$@\n" >&2; exit 1; }
 
 [[ "$EUID" == 0 ]] || errf "==> need root priviledge"
 
-SUB_CMD="$1"
-ROOT_FS="$2"
+ROOT_FS="$1"
+SUB_CMD="$2"
 [[ -n "$ROOT_FS" ]] || errf "==> root.fs undefined"
 ROOT_FS=$(realpath $ROOT_FS)
 [[ -d "$ROOT_FS" ]] || errf "==> root.fs not found"
@@ -130,6 +130,9 @@ case "$SUB_CMD" in
       ;;
    pack)
       package_iso
+      ;;
+   "")
+      build_iso_rootfs && package_iso
       ;;
    *)
       get_help
