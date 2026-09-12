@@ -16,7 +16,7 @@ COMM_DESK_PKGS+=" xdg-desktop-portal-gtk grim kanshi pavucontrol wob "
 COMM_DESK_PKGS+=" nautilus ifuse 7zip hicolor-icon-theme xdg-user-dirs "
 COMM_DESK_PKGS+=" swayimg mpv zathura zathura-pdf-poppler "
 COMM_DESK_PKGS+=" foot alacritty mate-polkit "
-COMM_DESK_PKGS+=" nftables rsync arp-scan "
+COMM_DESK_PKGS+=" nftables rsync tuned "
 
 ################################################################################
 # Fedora

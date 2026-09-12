@@ -11,16 +11,11 @@ KIMG=${KDIR}/${KVER}/vmlinuz # fedora, archlinux
 [[ -f $KIMG ]] || KIMG=/boot/vmlinuz-${KVER} # ubuntu
 [[ -f $KIMG ]] || exit 1
 
-if [[ -f /etc/dracut.conf.d/10-dmsquash-live.conf ]]; then
-   echo "==> generating initramfs.img (live) ..."
-   dracut --force --no-hostonly \
-      --kver "$KVER" "${DEST}/initramfs.img"
-else
-   echo "==> generating initramfs.img ..."
-   dracut --force --hostonly --no-hostonly-cmdline \
-      --kver "$KVER" "${DEST}/initramfs.img"
-fi
+echo "==> generating initramfs.img ..."
+dracut --force --hostonly --no-hostonly-cmdline \
+   --kver "$KVER" "${DEST}/initramfs.img"
 echo "==> installed '${DEST}/initramfs.img' (${KVER})"
+
 install -Dm0644 $KIMG ${DEST}/vmlinuz
 echo "==> installed '${DEST}/vmlinuz' (${KVER})"
 

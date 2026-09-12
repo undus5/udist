@@ -1,5 +1,6 @@
 [Match]
-Name=en*
+Type=ether
+Kind=!*
 
 [Network]
 Bridge=brlan
