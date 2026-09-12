@@ -8,7 +8,7 @@ errf() { printf "$@\n" >&2; exit 1; }
 [[ -n "$DESK_PKGS" ]] || errf "\$DESK_PKGS undefined"
 
 get_help() {
-   echo "==> usage: $(basename $0) <bootlive|bootdesk|chroot> <root.fs> [cmd]"
+   echo "==> usage: $(basename $0) <bootbase|bootdesk|chroot> <root.fs> [cmd]"
 }
 
 if [[ -z "$1" || "$1" == "-h" ]]; then get_help; exit 0; fi
@@ -34,8 +34,6 @@ test_empty_dir() {
 }
 
 vfs_mount() {
-   local EMPTY_DIR=$(test_empty_dir ${ROOT_FS}/usr)
-   [[ -z "$EMPTY_DIR" ]] || errf "==> root.fs is empty: $ROOT_FS"
    findmnt $ROOT_FS/proc &>/dev/null || \
       mount --mkdir --types proc /proc $ROOT_FS/proc
    for DIR in dev run sys; do
@@ -45,8 +43,6 @@ vfs_mount() {
 }
 
 vfs_umount() {
-   local EMPTY_DIR=$(test_empty_dir ${ROOT_FS}/usr)
-   [[ -z "$EMPTY_DIR" ]] || errf "==> root.fs is empty: $ROOT_FS"
    for DIR in dev proc run sys; do
       findmnt $ROOT_FS/$DIR &>/dev/null && umount -R $ROOT_FS/$DIR
    done
@@ -125,7 +121,7 @@ bootstrap_os() {
    [[ -n "$PASS" ]] || PASS="pass"
 
    [[ "$BASE_PKGS" =~ "dnf5" ]] && vfs_mount
-   local PKGS="$1"
+   local PKGS="$@"
    bootstrap_rootfs $ROOT_FS $PKGS
    [[ "$BASE_PKGS" =~ "dnf5" ]] && vfs_umount
 
@@ -135,7 +131,7 @@ bootstrap_os() {
    bootstrap_post
 
    cp -rP ${PROJ_DIR} ${ROOT_FS}/root/
-   echo "==> copied '${PROJ_NAME}' to 'root.fs/root/'"
+   echo "==> installed 'root.fs/root/${PROJ_NAME}'"
 
    vfs_mount
 
@@ -152,12 +148,14 @@ bootstrap_os() {
 
    vfs_chroot cp -rP /root/${PROJ_NAME} /home/u/
    vfs_chroot chown -R u:u /home/u/${PROJ_NAME}
-   vfs_chroot runuser - u -c '~/${PROJ_NAME}/udot/udot.sh install nvim'
-
-   mkdir -p /root/.config
-   ln -sf /home/u/.config/nvim /root/.config/nvim
+   echo "==> installed /home/u/${PROJ_NAME}"
+   vfs_chroot runuser - u -c 'mkdir -p /home/u/.config'
+   vfs_chroot cp -rP /home/u/${PROJ_NAME}/udot/nvim /home/u/.config/
+   echo "==> installed /home/u/.config/nvim"
+   vfs_chroot mkdir -p /root/.config
+   vfs_chroot ln -sf /home/u/.config/nvim /root/.config/nvim
    echo "==> linked /root/.config/nvim"
-   ln -sf /root/.config/nvim/vimrc /root/.vimrc
+   vfs_chroot ln -sf /root/.config/nvim/vimrc /root/.vimrc
    echo "==> linked /root/.vimrc"
 
    echo "==> generating initramfs image ... "
