@@ -28,3 +28,17 @@ end)
 swayimg.viewer.on_key("l", function()
    swayimg.viewer.open("next")
 end)
+
+swayimg.viewer.on_key("j", function()
+   local step = 0.2
+   if swayimg.viewer.scale < 2.0 then
+      swayimg.viewer.scale = swayimg.viewer.scale + step
+   end
+end)
+
+swayimg.viewer.on_key("k", function()
+   local step = 0.2
+   if swayimg.viewer.scale > 0.3 then
+      swayimg.viewer.scale = swayimg.viewer.scale - step
+   end
+end)
