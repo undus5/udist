@@ -20,37 +20,35 @@ case "$1" in
         ;;
 esac
 
-srcvol=/${srcname}/@
-dstvol=/${dstname}/@
-
-dstvol_alert="==> abort: you are running under '@${dstvol}' subvolume now"
-findmnt /${srcname} &>/dev/null && errf "$dstvol_alert"
-findmnt /${dstname} &>/dev/null || errf "$dstvol_alert"
+dstmnt_alert="==> abort: you are running under '@${dstname}' subvolume now"
+findmnt /${srcname} &>/dev/null && errf "$dstmnt_alert"
+findmnt /${dstname} &>/dev/null || errf "$dstmnt_alert"
+echo "==> subvolume '@${srcname}/@' mounted as '/'"
+echo "==> subvolume '@${dstname}'   mounted as '/${dstname}'"
 
 stubsrc=/efi/${srcname}
 stubdst=/efi/${dstname}
 mkdir -p $stubdst
 cp -rfP ${stubsrc}/* ${stubdst}/
-echo "==> copied vmlinuz, initramfs.img from '@${srcname}' to '@${dstname}'"
+echo "==> copied vmlinuz, initramfs.img from '${stubsrc}' to '${stubdst}'"
 
 # remove the read-only protection just in case
-btrfs prop set -f -ts $dstvol ro false
+btrfs prop set -f -ts /${dstname}/@ ro false
 
-btrfs subvolume delete $dstvol > /dev/null
-echo "==> deleted subvolume '${dstvol}'"
+btrfs subvolume delete /${dstname}/@ > /dev/null
+echo "==> deleted subvolume '@${dstname}/@' from '/${dstname}/@'"
 
-btrfs subvolume snapshot / $dstvol > /dev/null
-echo "==> created snapshot of '${srcvol}' in '${dstvol}'"
+btrfs subvolume snapshot / /${dstname}/@ > /dev/null
+echo "==> created snapshot of '@${srcname}/@' in '@${dstname}' at '/${dstname}/@'"
 
-echo "==> updated fstab in '/${dstname}/@'"
+echo "==> updated fstab in '@${dstname}/@' at '/${dstname}/@/etc/fstab'"
 sed -i -r \
     -e "s#/${dstname}#/${srcname}#" \
     -e "s#@${dstname}\s+0#@${srcname}   0#" \
     -e "s#@${srcname}/@#@${dstname}/@#" \
-    ${dstvol}/etc/fstab
+    /${dstname}/@/etc/fstab
 
-time=$(date +%Y%m%d.%H%M%S)
-timetxt=/${dstname}/timestamp.${time}.txt
+timefile="snapshot.$(date +%Y%m%d.%H%M).txt"
 rm /${dstname}/*.txt
-echo "${time}" > $timetxt
-echo "==> created ${timetxt}"
+echo "${time}" > /${dstname}/${timefile}
+echo "==> created timestamp in '@${dstname}/@' at '/${dstname}/${timefile}'"
