@@ -7,9 +7,11 @@ swayimg.text.timeout = 0
 swayimg.text.color = 0xffeeeeee
 swayimg.text.background = 0x88000000
 
-swayimg.viewer.set_text("topleft", {"{name}"})
-swayimg.viewer.set_text("topright", {"{frame.width}x{frame.height}"})
-swayimg.viewer.set_text("bottomright", {"{list.index}/{list.total}"})
+swayimg.viewer.text = {
+   topleft = {"{name}"},
+   topright = {"{frame.width}x{frame.height}"},
+   bottomright = {"{list.index}/{list.total}"}
+}
 
 -- keybindings
 
