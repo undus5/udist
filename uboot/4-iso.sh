@@ -99,9 +99,10 @@ package_iso() {
    [[ -z "$ISO_D" ]] || build_iso_rootfs
 
    source ${ISO_DIR}/boot/os-release
-   local NAME=$ID; [[ -n "$VERSION_ID" ]] && NAME+="-${VERSION_ID}"
-   [[ "$NAME" == "arch" ]] && NAME="archlinux-$(date +%Y.%m.%d)"
-   NAME=u-${NAME}
+   local NAME="$ID"
+   [[ -n "$VERSION_ID" ]] && NAME+="-${VERSION_ID}"
+   [[ "$NAME" == "arch" ]] && NAME="archlinux"
+   NAME="u-${NAME}-$(date +%Y.%m.%d)"
    local LABEL=${NAME^^}; LABEL=${LABEL/-/_}
    sed "s/_LABEL_/${LABEL}/g" \
       ${ISO_SRC}/limine/limine.conf >\
