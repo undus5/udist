@@ -9,7 +9,7 @@ import = [
 
 [font]
 # normal = { family = "monospace" }
-size = 13
+size = 15
 
 [window]
 # opacity = 0.9
