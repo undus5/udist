@@ -1,2 +1,5 @@
 set selection-clipboard clipboard
 set scroll-full-overlap 0.06
+# 'ctrl-r' invert colors
+set recolor-lightcolor '#282828'
+set recolor-darkcolor '#ebdbb2'
