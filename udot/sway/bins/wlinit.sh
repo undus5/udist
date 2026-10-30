@@ -31,7 +31,7 @@ fi
 #    sfwbar
 # fi
 
-# https://www.toptal.com/designers/subtlepatterns/
+# https://www.toptal.com/designers/subtlepatterns/repeated-dark-square-pattern/
 BG_FILE=$(find ~/Pictures/ -maxdepth 1 -type f -name 'wallpaper-*.png')
 BG_FILE=$(echo $BG_FILE | head -n 1)
 if [[ ! -f $BG_FILE ]]; then
