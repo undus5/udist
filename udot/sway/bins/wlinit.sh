@@ -23,9 +23,9 @@ if [[ -d /usr/share/icons/Papirus-Dark ]]; then
     gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark
 fi
 
-if [[ -n "$SWAYSOCK" && -d /usr/share/icons/breeze_cursors ]]; then
-    swaymsg seat seat0 xcursor_theme breeze_cursors 32
-fi
+# if [[ -n "$SWAYSOCK" && -d /usr/share/icons/breeze_cursors ]]; then
+#     swaymsg seat seat0 xcursor_theme breeze_cursors 32
+# fi
 
 # if [[ -n "$LABWC_PID" ]]; then
 #    sfwbar
