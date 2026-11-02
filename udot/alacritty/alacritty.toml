@@ -1,10 +1,10 @@
 [general]
 
 # https://github.com/alacritty/alacritty-theme
-# enfocado_dark, enfocado_light
-# catppuccin_mocha, catppuccin_latte
+# dark: tomorrow_night_bright
+# light: tomorrow
 import = [
-  "catppuccin_mocha.toml",
+  "tomorrow_night_bright.toml",
 ]
 
 [font]
