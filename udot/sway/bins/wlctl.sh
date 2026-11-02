@@ -133,6 +133,23 @@ sink_toggle() {
 }
 
 #################################################################################
+# color mode
+#################################################################################
+
+toggle_color_mode() {
+   local current_mode=$(gsettings get org.gnome.desktop.interface color-scheme)
+   local target_mode="prefer-dark"
+   local target_theme="Adwaita-dark"
+   if [[ "$current_mode" == "'prefer-dark'" ]]; then
+      target_mode="default"
+      target_theme="Adwaita"
+   fi
+   gsettings set org.gnome.desktop.interface color-scheme $target_mode
+   gsettings set org.gnome.desktop.interface gtk-theme $target_theme
+   notify-send -a $(basename $0) -t 1000 "Color Mode" "${target_mode}"
+}
+
+#################################################################################
 # status bar content
 #################################################################################
 

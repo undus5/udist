@@ -17,7 +17,8 @@ chkcmd $POLKIT_EXEC && ! chksrv $POLKIT_NAME && bgr $POLKIT_EXEC
 
 gsettings set org.gnome.desktop.privacy remember-recent-files false
 
-gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+# gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+# gsettings set org.gnome.desktop.interface gtk-theme Adwaita-dark
 
 if [[ -d /usr/share/icons/Papirus-Dark ]]; then
     gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark
