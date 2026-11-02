@@ -3,9 +3,17 @@
 set -e
 
 errf() { printf "$@\n" >&2; exit 1; }
+
 get_help() { errf "==> usage: $(basename $0) <on|off|switch|test>"; }
 
 [[ -z "$1" || "$1" == "-h" ]] && get_help
+
+################################################################################
+
+if [[ "$1" == "status" ]]; then
+   ls -l /usr/local/etc/naiveproxy.json
+   exit 0
+fi
 
 ################################################################################
 
