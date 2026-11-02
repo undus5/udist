@@ -254,7 +254,7 @@ lock_screen() {
 # https://github.com/OctopusET/sway-contrib
 #################################################################################
 
-save_path=~/Pictures/Screenshot.$(date +%y%m%d.%H%M%S).$(date +%N|cut -c1).png
+save_path=~/Desktop/Screenshot.$(date +%y%m%d.%H%M%S).$(date +%N|cut -c1).png
 
 screenshot_fullscreen() {
    test_cmd grim
@@ -271,6 +271,12 @@ screenshot_window() {
    test_cmd grim
    test_cmd grimshot.sh
    grimshot.sh savecopy window $save_path
+}
+
+screen_color_picker() {
+   test_cmd grim
+   test_cmd grimpicker.py
+   grimpicker.py -c -n
 }
 
 #################################################################################

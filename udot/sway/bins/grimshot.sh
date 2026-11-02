@@ -8,88 +8,73 @@
 ##  - `wl-copy`: clipboard utility
 ##  - `jq`: json utility to parse swaymsg output
 ##  - `notify-send`: to show notifications
+##  - `xdg-open`: optional, to open saved files from notifications
+##  - `wayfreeze`: optional, to freeze displays with --freeze
 ## Those are needed to be installed, if unsure, run `grimshot check`
 ##
 ## See `man 1 grimshot` or `grimshot usage` for further details.
 
-when() {
-  condition=$1
-  action=$2
-
-  if eval "$condition"; then
-    eval "$action"
-  fi
-}
-
-whenOtherwise() {
-  condition=$1
-  true_action=$2
-  false_action=$3
-
-  if eval "$condition"; then
-    eval "$true_action"
-  else
-    eval "$false_action"
-  fi
-}
-
-any() {
-  for tuple in "$@"; do
-    condition=$(echo "$tuple" | cut -d: -f1)
-    action=$(echo "$tuple" | cut -d: -f2-)
-    if eval "$condition"; then
-      eval "$action"
-      return 0
-    fi
-  done
-  return 1  # No conditions matched
+# Override standard echo to avoid confusing errors if, for example, a user
+# provides options like "-w -n" to the program.
+echo() {
+  printf '%s\n' "$*"
 }
 
 NOTIFY=no
 CURSOR=
+FREEZE=no
 WAIT=no
 
 getTargetDirectory() {
+  # The environment takes precedence over user-dirs.dirs, per variable.
+  screenshots=$XDG_SCREENSHOTS_DIR
+  pictures=$XDG_PICTURES_DIR
   test -f "${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs" &&
     . "${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs"
 
-  echo "${XDG_SCREENSHOTS_DIR:-${XDG_PICTURES_DIR:-$HOME}}"
+  echo "${screenshots:-${XDG_SCREENSHOTS_DIR:-${pictures:-${XDG_PICTURES_DIR:-$HOME}}}}"
 }
 
 parseArgs() {
-  POSITIONAL_ARGS=""
-
-  while [ $# -gt 0 ]; do
-    case "$1" in
+  # Count down instead of "for arg" so that -w can consume its value.
+  n=$#
+  while [ "$n" -gt 0 ]; do
+    arg=$1
+    shift
+    n=$((n - 1))
+    case "$arg" in
     -n | --notify)
       NOTIFY=yes
-      shift
       ;;
     -c | --cursor)
       CURSOR=yes
-      shift
+      ;;
+    -f | --freeze)
+      FREEZE=yes
       ;;
     -w | --wait)
-      shift
-      WAIT="$1"
-      if echo "$WAIT" | grep "[^0-9]" -q; then
+      WAIT=
+      if [ "$n" -gt 0 ]; then
+        WAIT="$1"
+        shift
+        n=$((n - 1))
+      fi
+      if echo "$WAIT" | grep -q "[^0-9]"; then
         echo "invalid value for wait '$WAIT'" >&2
         exit 3
       fi
-      shift
+      WAIT=${WAIT:-no}
       ;;
-    *)                                      # Treat anything else as a positional argument
-      POSITIONAL_ARGS="$POSITIONAL_ARGS $1" # Add positional argument to the string
-      shift
+    *)                   # Treat anything else as a positional argument
+      set -- "$@" "$arg" # Re-append to arguments.
       ;;
     esac
   done
 
-  set -- $POSITIONAL_ARGS # Re-assign positional arguments
   ACTION=${1:-usage}
   SUBJECT=${2:-screen}
   if [ -n "$GRIMSHOT_FILENAME_FORMAT" ]; then
-    FILENAME=$GRIMSHOT_FILENAME_FORMAT
+    FILENAME=$(date +"$GRIMSHOT_FILENAME_FORMAT")
   else
     FILENAME=$(date -Ins)
   fi
@@ -99,7 +84,7 @@ parseArgs() {
 
 printUsageMsg() {
   echo "Usage:"
-  echo "  grimshot [--notify] [--cursor] [--wait N] (copy|save) [active|screen|output|area|window|anything] [FILE|-]"
+  echo "  grimshot [--notify] [--cursor] [--freeze] [--wait N] (copy|save) [active|screen|output|area|window|anything] [FILE|-]"
   echo "  grimshot check"
   echo "  grimshot usage"
   echo ""
@@ -124,31 +109,49 @@ notify() {
   notify-send -t 3000 -a grimshot "$@"
 }
 
+# --action implies --wait, so run detached to not block the caller.
+notifyWithActions() {
+  (
+    action=$(notify-send -t 3000 -a grimshot --action=file='Open File' --action=dir='Open Directory' "$@")
+    case "$action" in
+    file) xdg-open "$FILE" ;;
+    dir) xdg-open "$(dirname "$FILE")" ;;
+    esac
+  ) </dev/null >/dev/null 2>&1 &
+}
+
 notifyOk() {
   notify_disabled='[ "$NOTIFY" = "no" ]'
-  action_involves_saving='[ "$ACTION" = "save" ] || [ "$ACTION" = "savecopy" ]'
 
   if eval $notify_disabled; then
-	  return
+    return
   fi
 
   TITLE=${2:-"Screenshot"}
   MESSAGE=${1:-"OK"}
 
-  whenOtherwise "$action_involves_saving" \
-    'notify "$TITLE" "$MESSAGE" -i "$FILE"' \
-    'notify "$TITLE" "$MESSAGE"'
+  if [ "$ACTION" = "save" ] || [ "$ACTION" = "savecopy" ]; then
+    if [ "$FILE" != "-" ] && command -v xdg-open >/dev/null 2>&1 &&
+      notify-send --help 2>/dev/null | grep -q -- --action; then
+      notifyWithActions "$TITLE" "$MESSAGE" -i "$FILE"
+    else
+      notify "$TITLE" "$MESSAGE" -i "$FILE"
+    fi
+  else
+    notify "$TITLE" "$MESSAGE"
+  fi
 }
 
 notifyError() {
-  notify_enabled='[ "$NOTIFY" = "yes" ]'
   TITLE=${2:-"Screenshot"}
   errorMssg=$1
   MESSAGE=${errorMssg:-"Error taking screenshot with grim"}
 
-  whenOtherwise "$notify_enabled" \
-    'notify "$TITLE" "$MESSAGE" -u critical' \
-    'echo "$errorMssg"'
+  if [ "$NOTIFY" = "yes" ]; then
+    notify "$TITLE" "$MESSAGE" -u critical
+  else
+    echo "$errorMssg"
+  fi
 }
 
 die() {
@@ -159,11 +162,12 @@ die() {
 
 check() {
   COMMAND=$1
-  command_exists='command -v "$COMMAND" > /dev/null 2>&1'
 
-  whenOtherwise "$command_exists" \
-    'RESULT="OK"' \
-    'RESULT="NOT FOUND"'
+  if command -v "$COMMAND" > /dev/null 2>&1; then
+    RESULT="OK"
+  else
+    RESULT="NOT FOUND"
+  fi
 
   echo "   $COMMAND: $RESULT"
 }
@@ -173,18 +177,15 @@ takeScreenshot() {
   GEOM=$2
   OUTPUT=$3
 
-  output_provided='[ -n "$OUTPUT" ]'
-  geom_not_provided='[ -z "$GEOM" ]'
-
-  output_action='grim ${CURSOR:+-c} -o "$OUTPUT" "$FILE" || die "Unable to invoke grim"'
-  full_screenshot_action='grim ${CURSOR:+-c} "$FILE" || die "Unable to invoke grim"'
-  geometry_screenshot_action='grim ${CURSOR:+-c} -g "$GEOM" "$FILE" || die "Unable to invoke grim"'
-
-  any \
-    "$output_provided:$output_action" \
-    "$geom_not_provided:$full_screenshot_action" \
-    "true:$geometry_screenshot_action"
+  if [ -n "$OUTPUT" ]; then
+    grim ${CURSOR:+-c} -o "$OUTPUT" "$FILE" || die "Unable to invoke grim"
+  elif [ -z "$GEOM" ]; then
+    grim ${CURSOR:+-c} "$FILE" || die "Unable to invoke grim"
+  else
+    grim ${CURSOR:+-c} -g "$GEOM" "$FILE" || die "Unable to invoke grim"
+  fi
 }
+
 checkRequiredTools() {
   echo "Checking if required tools are installed. If something is missing, install it to your system and make it available in PATH..."
   check grim
@@ -193,13 +194,14 @@ checkRequiredTools() {
   check wl-copy
   check jq
   check notify-send
+  check xdg-open
+  check wayfreeze
   exit
 }
 
 selectArea() {
   GEOM=$(slurp -d)
-  geomIsEmpty='[ -z "$GEOM" ]'
-  when "$geomIsEmpty" "exit 1"
+  [ -z "$GEOM" ] && exit 1
   WHAT="Area"
 }
 
@@ -223,17 +225,16 @@ selectOutput() {
 
 selectWindow() {
   GEOM=$(swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"' | slurp -r)
-  geomIsEmpty='[ -z "$GEOM" ]'
-  when "$geomIsEmpty" "exit 1"
+  [ -z "$GEOM" ] && exit 1
   WHAT="Window"
 }
 
 selectAnything() {
   GEOM=$(swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"' | slurp -o)
-  geomIsEmpty='[ -z "$GEOM" ]'
-  when "$geomIsEmpty" "exit 1"
+  [ -z "$GEOM" ] && exit 1
   WHAT="Selection"
 }
+
 handleSaveCopy() {
   wl-copy --type image/png <"$FILE" || die "Clipboard error"
   MESSAGE="$MESSAGE and clipboard"
@@ -242,8 +243,7 @@ handleSaveCopy() {
 handleScreenshotSuccess() {
   TITLE="Screenshot of $SUBJECT"
   MESSAGE=$(basename "$FILE")
-  isSaveCopy='[ "$ACTION" = "savecopy" ]'
-  when "$isSaveCopy" "handleSaveCopy"
+  [ "$ACTION" = "savecopy" ] && handleSaveCopy
   notifyOk "$MESSAGE" "$TITLE"
   echo "$FILE"
 }
@@ -258,43 +258,65 @@ handleCopy() {
 }
 
 handleSave() {
-  screenshotTaken="takeScreenshot \"$FILE\" \"$GEOM\" \"$OUTPUT\""
-  whenOtherwise "$screenshotTaken" \
-    "handleScreenshotSuccess" \
-    "handleScreenshotFailure"
+  if takeScreenshot "$FILE" "$GEOM" "$OUTPUT"; then
+    handleScreenshotSuccess
+  else
+    handleScreenshotFailure
+  fi
 }
+
 handleUnknownSubject() {
   die "Unknown subject to take a screenshot from" "$SUBJECT"
 }
+
+handleFreeze() {
+  command -v wayfreeze >/dev/null 2>&1 || die "wayfreeze not found"
+  if [ -z "$CURSOR" ]; then
+    notCursor="--hide-cursor"
+  fi
+  # Must not hold the caller's stdio open, e.g. $(grimshot save area) or "save area -".
+  wayfreeze $notCursor </dev/null >/dev/null 2>&1 &
+  FREEZE_PID=$!
+  trap 'kill $FREEZE_PID 2>/dev/null' EXIT
+  trap 'exit 1' HUP INT TERM
+  sleep .1;
+}
+
 handleScreenshot() {
-  actionIsInvalid='[ "$ACTION" != "save" ] && [ "$ACTION" != "copy" ] && [ "$ACTION" != "savecopy" ] && [ "$ACTION" != "check" ]'
-  actionIsCheck='[ "$ACTION" = "check" ]'
-  subjectIsArea='[ "$SUBJECT" = "area" ]'
-  subjectIsActiveWindow='[ "$SUBJECT" = "active" ]'
-  subjectIsScreen='[ "$SUBJECT" = "screen" ]'
-  subjectIsOutput='[ "$SUBJECT" = "output" ]'
-  subjectIsWindow='[ "$SUBJECT" = "window" ]'
-  subjectIsAnything='[ "$SUBJECT" = "anything" ]'
-  subjectIsUnknown=true
-  any \
-    "$actionIsInvalid:printUsageMsg" \
-    "$actionIsCheck:checkRequiredTools" \
-    "$subjectIsArea:selectArea" \
-    "$subjectIsActiveWindow:selectActiveWindow" \
-    "$subjectIsScreen:selectScreen" \
-    "$subjectIsOutput:selectOutput" \
-    "$subjectIsWindow:selectWindow" \
-    "$subjectIsAnything:selectAnything" \
-    "$subjectIsUnknown:handleUnknownSubject"
+  case "$ACTION" in
+    check)
+      checkRequiredTools ;;
+    save | copy | savecopy) : ;; # nothing
+    *)
+      printUsageMsg ;;
+  esac
 
-  wait='[ "$WAIT" != "no" ]'
-  when "$wait" "sleep $WAIT"
+  [ "$FREEZE" != "no" ] && handleFreeze
 
-  actionIsCopy='[ "$ACTION" = "copy" ]'
+  case "$SUBJECT" in
+    area)
+      selectArea ;;
+    active)
+      selectActiveWindow ;;
+    screen)
+      selectScreen ;;
+    output)
+      selectOutput ;;
+    window)
+      selectWindow ;;
+    anything)
+      selectAnything ;;
+    *)
+      handleUnknownSubject ;;
+  esac
 
-  whenOtherwise "$actionIsCopy" \
-    "handleCopy" \
-    "handleSave"
+  [ "$WAIT" != "no" ] && sleep "$WAIT"
+
+  if [ "$ACTION" = "copy" ]; then
+    handleCopy
+  else
+    handleSave
+  fi
 }
 
 parseArgs "$@"
