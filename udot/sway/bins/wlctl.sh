@@ -137,15 +137,37 @@ sink_toggle() {
 #################################################################################
 
 toggle_color_mode() {
-   local current_mode=$(gsettings get org.gnome.desktop.interface color-scheme)
-   local target_mode="prefer-dark"
-   local target_theme="Adwaita-dark"
-   if [[ "$current_mode" == "'prefer-dark'" ]]; then
-      target_mode="default"
-      target_theme="Adwaita"
+   local current_mode=$(gsettings get org.gnome.desktop.interface color-scheme | tr -d "'")
+   local target_mode="dark"
+   local gtk_color="prefer-dark"
+   local gtk_theme="Adwaita-dark"
+   local foot_signal=SIGUSR1
+   local foot_color=dark
+   local alacritty_theme=darkcolor.toml
+
+   if [[ "$current_mode" == "prefer-dark" ]]; then
+      target_mode="light"
+      gtk_color="default"
+      gtk_theme="Adwaita"
+      foot_signal=SIGUSR2
+      foot_color=light
+      alacritty_theme=lightcolor.toml
    fi
-   gsettings set org.gnome.desktop.interface color-scheme $target_mode
-   gsettings set org.gnome.desktop.interface gtk-theme $target_theme
+
+   gsettings set org.gnome.desktop.interface color-scheme $gtk_color
+   gsettings set org.gnome.desktop.interface gtk-theme $gtk_theme
+
+   if [[ -f ~/.config/foot/foot.ini ]]; then
+      kill -$foot_signal $(pgrep foot)
+      sed -i "/initial-color-theme=/c\\initial-color-theme=$foot_color" .config/foot/foot.ini
+   fi
+
+   if [[ -d ~/.config/alacritty ]]; then
+      cd ~/.config/alacritty
+      ln -sf $alacritty_theme colortheme.toml
+      cd -
+   fi
+
    notify-send -a $(basename $0) -t 1000 "Color Mode" "${target_mode}"
 }
 
