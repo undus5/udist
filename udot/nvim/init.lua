@@ -16,20 +16,13 @@ vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope live gr
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
 
-if os.getenv('TERM') ~= 'linux' then
-  -- colorscheme
-  vim.o.background = 'dark'
-  vim.cmd.colorscheme "off"
-
-  -- transparent background
-  vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
-  vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
-  vim.api.nvim_set_hl(0, 'FloatBorder', { bg = 'none' })
-  vim.api.nvim_set_hl(0, 'Pmenu', { bg = 'none' })
-  vim.api.nvim_set_hl(0, 'Terminal', { bg = 'none' })
-  vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'none' })
-  vim.api.nvim_set_hl(0, 'FoldColumn', { bg = 'none' })
-  vim.api.nvim_set_hl(0, 'Folded', { bg = 'none' })
-  vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' })
+-- coloscheme
+vim.cmd.colorscheme "off"
+function toggle_color_mode ()
+   if vim.o.background == 'dark' then
+      vim.o.background = 'light'
+   else
+      vim.o.background = 'dark'
+   end
 end
-
+vim.keymap.set('n', '<leader>gg', toggle_color_mode, { desc = 'Toggle color mode' })

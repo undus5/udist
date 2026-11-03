@@ -260,12 +260,12 @@ syntax on
 
 " to list built-in color themes, type `:colo <Tab>`
 
-set background=dark
-try
-    colorscheme habamax
-catch
-    syntax off
-endtry
+"set background=dark
+"try
+"    colorscheme habamax
+"catch
+"    syntax off
+"endtry
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Enable Plugins
