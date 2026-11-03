@@ -4,7 +4,7 @@
 # dark: tomorrow_night_bright
 # light: tomorrow
 import = [
-  "tomorrow_night_bright.toml",
+  "colortheme.toml",
 ]
 
 [font]
