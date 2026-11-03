@@ -1,0 +1,9 @@
+*.log
+debug
+*~
+*.swp
+.vs/
+.vscode
+.settings
+.idea
+.tests/

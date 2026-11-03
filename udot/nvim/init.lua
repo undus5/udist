@@ -6,6 +6,17 @@ vim.cmd('source ' .. script_dir .. '/vimrc')
 -- pathogen
 vim.fn['pathogen#infect']('plugins/{}')
 
+-- coloscheme
+vim.cmd.colorscheme "modus"
+function toggle_color_mode ()
+   if vim.o.background == 'dark' then
+      vim.o.background = 'light'
+   else
+      vim.o.background = 'dark'
+   end
+end
+vim.keymap.set('n', '<leader>gg', toggle_color_mode, { desc = 'Toggle color mode' })
+
 -- oil.vim
 require("oil").setup()
 
@@ -15,14 +26,3 @@ vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Telescope find f
 vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope live grep' })
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
-
--- coloscheme
-vim.cmd.colorscheme "off"
-function toggle_color_mode ()
-   if vim.o.background == 'dark' then
-      vim.o.background = 'light'
-   else
-      vim.o.background = 'dark'
-   end
-end
-vim.keymap.set('n', '<leader>gg', toggle_color_mode, { desc = 'Toggle color mode' })

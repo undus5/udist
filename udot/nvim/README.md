@@ -41,15 +41,8 @@ file explorer
 
 [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim)
 (deps: [nvim-lua/plenary.nvim](https://github.com/nvim-lua/plenary.nvim),
-[BurntSushi/ripgrep](https://github.com/BurntSushi/ripgrep))
+[BurntSushi/ripgrep](kttps://github.com/BurntSushi/ripgrep))
 fuzzy finder, to let it respect `.gitignore`, git repo needs to be initialized.
 
-[emmet-vim](https://github.com/mattn/emmet-vim)
-html & css helper
-
-[vim-colors-off](https://github.com/pbrisbin/vim-colors-off)
+[modus-themes.nvim](https://github.com/miikanissi/modus-themes.nvim)
 current colorscheme
-
-[vim-no-color-collections](https://github.com/mcchrish/vim-no-color-collections)
-other colorschemes
-
