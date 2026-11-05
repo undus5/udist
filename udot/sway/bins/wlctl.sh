@@ -168,7 +168,7 @@ toggle_color_mode() {
       cd -
    fi
 
-   notify-send -a $(basename $0) -t 1000 "Color Mode" "${target_mode}"
+   notify-send -a $(basename $0) -t 1000 "${target_mode^} Mode"
 }
 
 #################################################################################
