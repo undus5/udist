@@ -33,10 +33,10 @@ fi
 # fi
 
 # https://www.toptal.com/designers/subtlepatterns/repeated-dark-square-pattern/
-BG_FILE=$(find ~/Pictures/ -maxdepth 1 -type f -name 'wallpaper-*.png')
+BG_FILE=$(find ~/Pictures/ -maxdepth 1 -type f \( -name 'wallpaper-*.png' -o -name 'wallpaper-*.jpg' \))
 BG_FILE=$(echo $BG_FILE | head -n 1)
 if [[ ! -f $BG_FILE ]]; then
-   BG_FILE=$(find ~/.config/sway/ -maxdepth 1 -type f -name 'wallpaper-*.png')
+   BG_FILE=$(find ~/.config/sway/ -maxdepth 1 -type f \( -name 'wallpaper-*.png' -o -name 'wallpaper-*.jpg' \))
    BG_FILE=$(echo $BG_FILE | head -n 1)
 fi
 if [[ -f $BG_FILE ]]; then
