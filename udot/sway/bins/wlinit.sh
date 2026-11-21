@@ -1,56 +1,12 @@
 #!/usr/bin/bash
 
-chkcmd() { command -v "${@}" &>/dev/null; }
-chksrv() { pidof "${@}" &>/dev/null; }
-bgr() { nohup "${@}" &>/dev/null & }
+SELF_DIR=$(dirname $(realpath ${BASH_SOURCE[0]}))
+WLCTL=${SELF_DIR}/wlctl.sh
 
-chkcmd fcitx5 && ! chksrv fcitx5 && bgr fcitx5 -d -r
-chkcmd kanshi && ! chksrv kanshi && bgr kanshi
-chkcmd kanshictl && kanshictl reload
-
-POLKIT_NAME=polkit-mate-authentication-agent-1
-POLKIT_FEDORA=/usr/libexec/${POLKIT_NAME}
-POLKIT_ARCHLINUX=/usr/lib/mate-polkit/${POLKIT_NAME}
-[[ -f $POLKIT_ARCHLINUX ]] && POLKIT_EXEC=$POLKIT_ARCHLINUX
-[[ -f $POLKIT_FEDORA ]] && POLKIT_EXEC=$POLKIT_FEDORA
-chkcmd $POLKIT_EXEC && ! chksrv $POLKIT_NAME && bgr $POLKIT_EXEC
-
-gsettings set org.gnome.desktop.privacy remember-recent-files false
-
-# gsettings set org.gnome.desktop.interface color-scheme prefer-dark
-# gsettings set org.gnome.desktop.interface gtk-theme Adwaita-dark
-
-if [[ -d /usr/share/icons/Papirus-Dark ]]; then
-    gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark
-fi
-
-# if [[ -n "$SWAYSOCK" && -d /usr/share/icons/breeze_cursors ]]; then
-#     swaymsg seat seat0 xcursor_theme breeze_cursors 32
-# fi
-
-# if [[ -n "$LABWC_PID" ]]; then
-#    sfwbar
-# fi
-
-# https://www.toptal.com/designers/subtlepatterns/repeated-dark-square-pattern/
-BG_FILE=$(find ~/Pictures/ -maxdepth 1 -type f \( -name 'wallpaper-*.png' -o -name 'wallpaper-*.jpg' \))
-BG_FILE=$(echo $BG_FILE | head -n 1)
-if [[ ! -f $BG_FILE ]]; then
-   BG_FILE=$(find ~/.config/sway/ -maxdepth 1 -type f \( -name 'wallpaper-*.png' -o -name 'wallpaper-*.jpg' \))
-   BG_FILE=$(echo $BG_FILE | head -n 1)
-fi
-if [[ -f $BG_FILE ]]; then
-   BG_NAME=$(basename $BG_FILE)
-   BG_NAME=${BG_NAME%.*}
-   BG_MODE=${BG_NAME#wallpaper-}
-   MODES=( stretch fill fit center tile )
-   MODE=tile
-   for M in ${MODES[@]}; do
-      [[ "$BG_MODE" == "$M" ]] && MODE=$M
-   done
-   chksrv swaybg && pidof swaybg | xargs kill -9
-   bgr swaybg --mode $MODE --image "$BG_FILE"
-fi
+$WLCTL init-fcitx5
+$WLCTL init-polkit
+$WLCTL init-icon-theme
+$WLCTL init-wallpaper
 
 ### ~/.bashrc
 # https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland
