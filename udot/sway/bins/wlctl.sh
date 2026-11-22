@@ -11,6 +11,13 @@ back_run() { nohup "$@" &>/dev/null & }
 # desktop initialization
 #################################################################################
 
+### ~/.bashrc
+# https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland
+# export QT_IM_MODULE=fcitx
+# export XMODIFIERS=@im=fcitx
+# [[ -z "$WAYLAND_DISPLAY" ]] && [[ "$XDG_VTNR" -eq 1 ]] && exec sway
+# [[ -z "$WAYLAND_DISPLAY" ]] && [[ "$XDG_VTNR" -eq 1 ]] && kmscon-launch-gui sway
+
 init_fcitx5() {
    test_cmd fcitx5 && ! test_srv fcitx5 && back_run fcitx5 -d -r
    test_cmd kanshi && ! test_srv kanshi && back_run kanshi
@@ -81,6 +88,13 @@ init_wallpaper() {
          back_run swaybg --color 000000 --mode solid_color
       fi
    fi
+}
+
+init_desktop() {
+   init_fcitx5
+   init_polkit
+   init_icon_theme
+   init_wallpaper
 }
 
 #################################################################################
@@ -164,6 +178,37 @@ toggle_color_mode() {
 }
 
 #################################################################################
+# wob
+# repo: https://github.com/francma/wob
+# example: https://gitlab.com/wef/dotfiles/-/blob/master/bin/mywob
+#################################################################################
+
+wobctl() {
+   [[ -n "$WAYLAND_DISPLAY" ]] || errf "wayland display not found"
+   test_cmd wob || errf "command not found: wob"
+   local WOB_PIPE=~/.cache/${WAYLAND_DISPLAY}.wob
+   local WOB_STATUS="false"
+   local WOB_DISPLAY=
+   for pid in $( pgrep -u "$USER" "^wob$" ); do
+      WOB_DISPLAY="$( tr '\0' '\n' < "/proc/$pid/environ" | \
+         awk -F'=' '/^WAYLAND_DISPLAY/ {print $2}' )"
+      [[ "$WOB_DISPLAY" == "$WAYLAND_DISPLAY" ]] && WOB_STATUS="true"
+   done
+   [[ -p $WOB_PIPE ]] || mkfifo "$WOB_PIPE"
+   [[ "$WOB_STATUS" == "false" ]] && tail -f $WOB_PIPE | wob &
+   echo "$1" > $WOB_PIPE
+}
+
+#################################################################################
+# reload rime
+#################################################################################
+
+rime_reload() {
+   rm -rf ~/.local/share/fcitx5/rime/build
+   back_run fcitx5 -d -r
+}
+
+#################################################################################
 # reload wayland compositor
 #################################################################################
 
@@ -230,7 +275,7 @@ vol_down() {
    per=${1:-5}
    wpctl set-volume @DEFAULT_AUDIO_SINK@ ${per}%-
    local vol=$(vol_num $(vol_get @DEFAULT_AUDIO_SINK@))
-   wobctl.sh $vol
+   wobctl $vol
    # vol_notify $vol
 }
 
@@ -239,7 +284,7 @@ vol_up() {
    per=${1:-5}
    wpctl set-volume @DEFAULT_AUDIO_SINK@ ${per}%+
    local vol=$(vol_num $(vol_get @DEFAULT_AUDIO_SINK@))
-   wobctl.sh $vol
+   wobctl $vol
    # vol_notify $vol
 }
 
@@ -247,7 +292,7 @@ mute_toggle_speaker() {
    test_cmd wpctl || errf "command not found: wpctl"
    wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
    local vol=$(vol_num $(vol_get @DEFAULT_AUDIO_SINK@))
-   wobctl.sh $vol
+   wobctl $vol
    # local msg=
    # if [[ "$vol" == "0" ]]; then
    #    msg="Speaker Muted"
