@@ -1,6 +1,6 @@
 set selection-clipboard clipboard
 set scroll-full-overlap 0.06
-set font "monospace normal 16"
+set font "monospace normal 15"
 # 'ctrl-r' invert colors
 set recolor-lightcolor "#080808"
 set recolor-darkcolor "#ebdbb2"
